@@ -23,6 +23,7 @@ module Data.Primitive.Array
 
 import Control.Monad.Primitive (PrimMonad,PrimState)
 import Control.Exception (throw, ArrayException(..))
+import qualified Data.List as L
 import "primitive" Data.Primitive.Array (Array,MutableArray)
 import qualified "primitive" Data.Primitive.Array as A
 
@@ -99,7 +100,20 @@ copyMutableArray :: PrimMonad m
 copyMutableArray marr1 s1 marr2 s2 l = do
   let siz1 = A.sizeofMutableArray marr1
   let siz2 = A.sizeofMutableArray marr2
-  check "copyMutableArray: index range of out bounds"
+  let explain = L.concat
+        [ "[dst size: "
+        , show siz1
+        , ", dst off: " 
+        , show s1
+        , ", src size: "
+        , show siz2
+        , ", src off: " 
+        , show s2
+        , ", copy size: "
+        , show l
+        , "]"
+        ]
+  check ("copyMutableArray: index range of out bounds " ++ explain)
     (s1>=0 && s2>=0 && l>=0 && (s2+l)<=siz2 && (s1+l)<=siz1)
     (A.copyMutableArray marr1 s1 marr2 s2 l)
 

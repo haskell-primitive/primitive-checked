@@ -46,10 +46,18 @@ import qualified "primitive" Data.Primitive.ByteArray as A
 
 check :: String -> Bool -> a -> a
 check _      True  x = x
-check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.SmallArray.Checked." ++ errMsg)
+check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ errMsg)
 
 elementSizeofByteArray :: forall a. Prim a => Proxy a -> ByteArray -> Int
 elementSizeofByteArray _ arr = div (A.sizeofByteArray arr) (sizeOf (undefined :: a))
+
+elementSizeofByteArrayPermissive :: forall a. Prim a => Proxy a -> ByteArray -> Int
+elementSizeofByteArrayPermissive _ arr =
+  div (A.sizeofByteArray arr) (sizeOf (undefined :: a)) + 
+  ( if rem (A.sizeofByteArray arr) (sizeOf (undefined :: a)) == 0
+      then 0
+      else 1
+  ) 
 
 elementSizeofMutableByteArray :: forall s a. Prim a => Proxy a -> MutableByteArray s -> Int
 elementSizeofMutableByteArray _ arr = div (A.sizeofMutableByteArray arr) (sizeOf (undefined :: a))
@@ -73,9 +81,12 @@ writeByteArray marr i x = do
   let siz = elementSizeofMutableByteArray (Proxy :: Proxy a) marr
   check "writeByteArray: index of out bounds" (i>=0 && i<siz) (A.writeByteArray marr i x)
 
+-- This one is a little special. We allow users to index past the
+-- end of the byte array as long as the content grabbed is within
+-- the last machine word of the byte array.
 indexByteArray :: forall a. Prim a => ByteArray -> Int -> a
-indexByteArray arr i = check "indexSmallArray: index of out bounds"
-  (i>=0 && i< elementSizeofByteArray (Proxy :: Proxy a) arr)
+indexByteArray arr i = check "indexByteArray: index of out bounds"
+  (i>=0 && i< elementSizeofByteArrayPermissive (Proxy :: Proxy a) arr)
   (A.indexByteArray arr i)
 
 copyByteArray :: forall m. PrimMonad m
@@ -134,7 +145,6 @@ setByteArray :: forall m a. (Prim a, PrimMonad m)
   -> Int -- ^ number of values to fill
   -> a -- ^ value to fill with
   -> m ()
-{-# INLINE setByteArray #-}
 setByteArray dst doff sz x  = 
   check "copyMutableByteArray: index range of out bounds"
     (doff>=0 && (doff+sz)<=elementSizeofMutableByteArray (Proxy :: Proxy a) dst)

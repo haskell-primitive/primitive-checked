@@ -21,6 +21,8 @@ module Data.Primitive.UnliftedArray
   , copyMutableUnliftedArray
   , cloneUnliftedArray
   , cloneMutableUnliftedArray
+  , A.mapUnliftedArray
+  , A.foldrUnliftedArray
   ) where
 
 import Control.Monad.Primitive (PrimMonad,PrimState)

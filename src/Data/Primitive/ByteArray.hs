@@ -43,10 +43,11 @@ import Data.Proxy (Proxy(..))
 import Data.Word (Word8)
 import "primitive" Data.Primitive.ByteArray (ByteArray,MutableByteArray)
 import qualified "primitive" Data.Primitive.ByteArray as A
+import GHC.Stack
 
-check :: String -> Bool -> a -> a
+check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
-check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ errMsg)
+check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
 elementSizeofByteArray :: forall a. Prim a => Proxy a -> ByteArray -> Int
 elementSizeofByteArray _ arr = div (A.sizeofByteArray arr) (sizeOf (undefined :: a))
@@ -62,21 +63,21 @@ elementSizeofByteArrayPermissive _ arr =
 elementSizeofMutableByteArray :: forall s a. Prim a => Proxy a -> MutableByteArray s -> Int
 elementSizeofMutableByteArray _ arr = div (A.sizeofMutableByteArray arr) (sizeOf (undefined :: a))
 
-newByteArray :: PrimMonad m => Int -> m (MutableByteArray (PrimState m))
+newByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
 newByteArray n = check "newByteArray: negative size" (n>=0) (A.newByteArray n)
 
-newPinnedByteArray :: PrimMonad m => Int -> m (MutableByteArray (PrimState m))
+newPinnedByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
 newPinnedByteArray n = check "newPinnedByteArray: negative size" (n>=0) (A.newPinnedByteArray n)
 
-newAlignedPinnedByteArray :: PrimMonad m => Int -> Int -> m (MutableByteArray (PrimState m))
+newAlignedPinnedByteArray :: (HasCallStack, PrimMonad m) => Int -> Int -> m (MutableByteArray (PrimState m))
 newAlignedPinnedByteArray n k = check "newAlignedPinnedByteArray: negative size" (n>=0) (A.newAlignedPinnedByteArray n k)
 
-readByteArray :: forall m a. (Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> m a
+readByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> m a
 readByteArray marr i = do
   let siz = elementSizeofMutableByteArray (Proxy :: Proxy a) marr
   check "readByteArray: index of out bounds" (i>=0 && i<siz) (A.readByteArray marr i)
 
-writeByteArray :: forall m a. (Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> a -> m ()
+writeByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> a -> m ()
 writeByteArray marr i x = do
   let siz = elementSizeofMutableByteArray (Proxy :: Proxy a) marr
   check "writeByteArray: index of out bounds" (i>=0 && i<siz) (A.writeByteArray marr i x)
@@ -84,12 +85,12 @@ writeByteArray marr i x = do
 -- This one is a little special. We allow users to index past the
 -- end of the byte array as long as the content grabbed is within
 -- the last machine word of the byte array.
-indexByteArray :: forall a. Prim a => ByteArray -> Int -> a
+indexByteArray :: forall a. (HasCallStack, Prim a) => ByteArray -> Int -> a
 indexByteArray arr i = check "indexByteArray: index of out bounds"
   (i>=0 && i< elementSizeofByteArrayPermissive (Proxy :: Proxy a) arr)
   (A.indexByteArray arr i)
 
-copyByteArray :: forall m. PrimMonad m
+copyByteArray :: forall m. (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ destination array
   -> Int -- ^ offset into destination array
   -> ByteArray -- ^ source array
@@ -103,7 +104,7 @@ copyByteArray marr s1 arr s2 l = do
     (A.copyByteArray marr s1 arr s2 l)
 
 
-copyMutableByteArray :: forall m. PrimMonad m
+copyMutableByteArray :: forall m. (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ destination array
   -> Int -- ^ offset into destination array
   -> MutableByteArray (PrimState m) -- ^ source array
@@ -117,7 +118,7 @@ copyMutableByteArray marr1 s1 marr2 s2 l = do
     (s1>=0 && s2>=0 && l>=0 && (s2+l)<=siz2 && (s1+l)<=siz1)
     (A.copyMutableByteArray marr1 s1 marr2 s2 l)
 
-moveByteArray :: forall m. PrimMonad m
+moveByteArray :: forall m. (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ destination array
   -> Int -- ^ offset into destination array
   -> MutableByteArray (PrimState m) -- ^ source array
@@ -131,7 +132,7 @@ moveByteArray marr1 s1 marr2 s2 l = do
     (s1>=0 && s2>=0 && l>=0 && (s2+l)<=siz2 && (s1+l)<=siz1)
     (A.moveByteArray marr1 s1 marr2 s2 l)
 
-fillByteArray :: PrimMonad m
+fillByteArray :: (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ array to fill
   -> Int -- ^ offset into array
   -> Int -- ^ number of bytes to fill
@@ -139,7 +140,7 @@ fillByteArray :: PrimMonad m
   -> m ()
 fillByteArray = setByteArray
 
-setByteArray :: forall m a. (Prim a, PrimMonad m)
+setByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ array to fill
   -> Int -- ^ offset into array
   -> Int -- ^ number of values to fill

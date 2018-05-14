@@ -26,36 +26,37 @@ import Control.Exception (throw, ArrayException(..))
 import qualified Data.List as L
 import "primitive" Data.Primitive.Array (Array,MutableArray)
 import qualified "primitive" Data.Primitive.Array as A
+import GHC.Stack
 
-check :: String -> Bool -> a -> a
+check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
-check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.Array.Checked." ++ errMsg)
+check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.Array.Checked." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
-newArray :: PrimMonad m => Int -> a -> m (MutableArray (PrimState m) a)
+newArray :: (HasCallStack, PrimMonad m) => Int -> a -> m (MutableArray (PrimState m) a)
 newArray n x = check "newArray: negative size" (n>=0) (A.newArray n x)
 
-readArray :: PrimMonad m => MutableArray (PrimState m) a -> Int -> m a
+readArray :: (HasCallStack, PrimMonad m) => MutableArray (PrimState m) a -> Int -> m a
 readArray marr i = do
   let siz = A.sizeofMutableArray marr
   check "readArray: index of out bounds" (i>=0 && i<siz) (A.readArray marr i)
 
-writeArray :: PrimMonad m => MutableArray (PrimState m) a -> Int -> a -> m ()
+writeArray :: (HasCallStack, PrimMonad m) => MutableArray (PrimState m) a -> Int -> a -> m ()
 writeArray marr i x = do
   let siz = A.sizeofMutableArray marr
   check "writeArray: index of out bounds" (i>=0 && i<siz) (A.writeArray marr i x)
 
-indexArray :: Array a -> Int -> a
+indexArray :: HasCallStack => Array a -> Int -> a
 indexArray arr i = check "indexArray: index of out bounds"
   (i>=0 && i<A.sizeofArray arr)
   (A.indexArray arr i)
 
-indexArrayM :: Monad m => Array a -> Int -> m a
+indexArrayM :: HasCallStack => Monad m => Array a -> Int -> m a
 indexArrayM arr i = check "indexArrayM: index of out bounds"
     (i>=0 && i<A.sizeofArray arr)
     (A.indexArrayM arr i)
 
 freezeArray
-  :: PrimMonad m
+  :: (HasCallStack, PrimMonad m)
   => MutableArray (PrimState m) a -- ^ source
   -> Int                          -- ^ offset
   -> Int                          -- ^ length
@@ -67,7 +68,7 @@ freezeArray marr s l = do
     (A.freezeArray marr s l)
 
 thawArray
-  :: PrimMonad m
+  :: (HasCallStack, PrimMonad m)
   => Array a -- ^ source
   -> Int     -- ^ offset
   -> Int     -- ^ length
@@ -76,7 +77,7 @@ thawArray arr s l = check "thawArr: index range of out bounds"
     (s>=0 && l>=0 && (s+l)<=A.sizeofArray arr)
     (A.thawArray arr s l)
 
-copyArray :: PrimMonad m
+copyArray :: (HasCallStack, PrimMonad m)
           => MutableArray (PrimState m) a    -- ^ destination array
           -> Int                             -- ^ offset into destination array
           -> Array a                         -- ^ source array
@@ -90,7 +91,7 @@ copyArray marr s1 arr s2 l = do
     (A.copyArray marr s1 arr s2 l)
 
 
-copyMutableArray :: PrimMonad m
+copyMutableArray :: (HasCallStack, PrimMonad m)
           => MutableArray (PrimState m) a    -- ^ destination array
           -> Int                             -- ^ offset into destination array
           -> MutableArray (PrimState m) a    -- ^ source array
@@ -118,7 +119,8 @@ copyMutableArray marr1 s1 marr2 s2 l = do
     (A.copyMutableArray marr1 s1 marr2 s2 l)
 
 
-cloneArray :: Array a -- ^ source array
+cloneArray :: HasCallStack
+           => Array a -- ^ source array
            -> Int     -- ^ offset into destination array
            -> Int     -- ^ number of elements to copy
            -> Array a
@@ -126,7 +128,7 @@ cloneArray arr s l = check "cloneArray: index range of out bounds"
     (s>=0 && l>=0 && (s+l)<=A.sizeofArray arr)
     (A.cloneArray arr s l)
 
-cloneMutableArray :: PrimMonad m
+cloneMutableArray :: (HasCallStack, PrimMonad m)
         => MutableArray (PrimState m) a -- ^ source array
         -> Int                          -- ^ offset into destination array
         -> Int                          -- ^ number of elements to copy

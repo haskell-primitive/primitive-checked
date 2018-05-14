@@ -78,22 +78,23 @@ import Control.Exception (throw, ArrayException(..))
 import Data.Primitive.Types (Prim)
 import "primitive" Data.Primitive.PrimArray (PrimArray,MutablePrimArray)
 import qualified "primitive" Data.Primitive.PrimArray as A
+import GHC.Stack
 
-check :: String -> Bool -> a -> a
+check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
-check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.PrimArray." ++ errMsg)
+check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.PrimArray." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
-newPrimArray :: forall m a. (PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
+newPrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
 newPrimArray n = check "newPrimArray: negative size" (n>=0) (A.newPrimArray n)
 
-resizeMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
+resizeMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
   -> m (MutablePrimArray (PrimState m) a)
 resizeMutablePrimArray marr n = check "resizeMutablePrimArray: negative size" (n>=0) (A.resizeMutablePrimArray marr n)
 
 #if __GLASGOW_HASKELL__ >= 710
-shrinkMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
+shrinkMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
   -> m ()
@@ -102,13 +103,13 @@ shrinkMutablePrimArray marr n = do
   check "shrinkMutablePrimArray: illegal new size" (n>=0 && n <= old) (A.shrinkMutablePrimArray marr n)
 #endif
 
-readPrimArray :: (Prim a, PrimMonad m) => MutablePrimArray (PrimState m) a -> Int -> m a
+readPrimArray :: (HasCallStack, Prim a, PrimMonad m) => MutablePrimArray (PrimState m) a -> Int -> m a
 readPrimArray marr i = do
   siz <- A.getSizeofMutablePrimArray marr
   check "readPrimArray: index of out bounds" (i>=0 && i<siz) (A.readPrimArray marr i)
 
 writePrimArray ::
-     (Prim a, PrimMonad m)
+     (HasCallStack, Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array
   -> Int -- ^ index
   -> a -- ^ element
@@ -122,7 +123,7 @@ indexPrimArray arr i = check "indexPrimArray: index of out bounds"
   (i>=0 && i< A.sizeofPrimArray arr)
   (A.indexPrimArray arr i)
 
-setPrimArray :: forall m a. (Prim a, PrimMonad m)
+setPrimArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array to fill
   -> Int -- ^ offset into array
   -> Int -- ^ number of values to fill
@@ -134,7 +135,7 @@ setPrimArray dst doff sz x = do
     (doff>=0 && (doff+sz)<=arrSz)
     (A.setPrimArray dst doff sz x)
 
-copyMutablePrimArray :: forall m a. (PrimMonad m, Prim a)
+copyMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ destination array
   -> Int -- ^ offset into destination array
   -> MutablePrimArray (PrimState m) a -- ^ source array
@@ -149,7 +150,7 @@ copyMutablePrimArray marr1 s1 marr2 s2 l = do
     (A.copyMutablePrimArray marr1 s1 marr2 s2 l)
 
 copyPrimArray :: forall m a.
-     (PrimMonad m, Prim a)
+     (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ destination array
   -> Int -- ^ offset into destination array
   -> PrimArray a -- ^ source array

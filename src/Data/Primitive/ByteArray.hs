@@ -13,6 +13,7 @@ module Data.Primitive.ByteArray
   , newByteArray
   , newPinnedByteArray
   , newAlignedPinnedByteArray
+  , resizeMutableByteArray
     -- * Element access
   , readByteArray
   , writeByteArray
@@ -71,6 +72,9 @@ newPinnedByteArray n = check "newPinnedByteArray: negative size" (n>=0) (A.newPi
 
 newAlignedPinnedByteArray :: (HasCallStack, PrimMonad m) => Int -> Int -> m (MutableByteArray (PrimState m))
 newAlignedPinnedByteArray n k = check "newAlignedPinnedByteArray: negative size" (n>=0) (A.newAlignedPinnedByteArray n k)
+
+resizeMutableByteArray :: PrimMonad m => MutableByteArray (PrimState m) -> Int -> m (MutableByteArray (PrimState m))
+resizeMutableByteArray a n = check "resizeMutableByteArray: negative size" (n>=0) (A.resizeMutableByteArray a n)
 
 readByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> m a
 readByteArray marr i = do

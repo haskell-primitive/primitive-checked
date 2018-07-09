@@ -1,6 +1,6 @@
 cabal-version: 2.0
 name: primitive-checked
-version: 0.6.4.0
+version: 0.6.4.1
 synopsis: primitive functions with bounds-checking
 homepage: https://github.com/andrewthad/primitive-checked#readme
 bug-reports: https://github.com/andrewthad/primitive-checked/issues

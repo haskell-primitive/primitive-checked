@@ -23,6 +23,10 @@ module Data.Primitive.UnliftedArray
   , cloneMutableUnliftedArray
   , A.mapUnliftedArray
   , A.foldrUnliftedArray
+  , A.foldlUnliftedArray
+  , A.foldrUnliftedArray'
+  , A.foldlUnliftedArray'
+  , A.unliftedArrayFromList
   ) where
 
 import Control.Monad.Primitive (PrimMonad,PrimState)

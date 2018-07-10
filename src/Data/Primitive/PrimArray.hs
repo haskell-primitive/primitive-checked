@@ -79,6 +79,7 @@ import Data.Primitive.Types (Prim)
 import "primitive" Data.Primitive.PrimArray (PrimArray,MutablePrimArray)
 import qualified "primitive" Data.Primitive.PrimArray as A
 import GHC.Stack
+import qualified Data.List as L
 
 check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
@@ -106,7 +107,14 @@ shrinkMutablePrimArray marr n = do
 readPrimArray :: (HasCallStack, Prim a, PrimMonad m) => MutablePrimArray (PrimState m) a -> Int -> m a
 readPrimArray marr i = do
   siz <- A.getSizeofMutablePrimArray marr
-  check "readPrimArray: index of out bounds" (i>=0 && i<siz) (A.readPrimArray marr i)
+  let explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("readPrimArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.readPrimArray marr i)
 
 writePrimArray ::
      (HasCallStack, Prim a, PrimMonad m)
@@ -116,12 +124,28 @@ writePrimArray ::
   -> m ()
 writePrimArray marr i x = do
   siz <- A.getSizeofMutablePrimArray marr
-  check "writePrimArray: index of out bounds" (i>=0 && i<siz) (A.writePrimArray marr i x)
+  let explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("writePrimArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.writePrimArray marr i x)
 
 indexPrimArray :: forall a. Prim a => PrimArray a -> Int -> a
-indexPrimArray arr i = check "indexPrimArray: index of out bounds"
-  (i>=0 && i< A.sizeofPrimArray arr)
-  (A.indexPrimArray arr i)
+indexPrimArray arr i = 
+  let sz = A.sizeofPrimArray arr
+      explain = L.concat
+        [ "[size: "
+        , show sz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+   in check ("indexPrimArray: index of out bounds " ++ explain)
+        (i>=0 && i< sz)
+        (A.indexPrimArray arr i)
 
 setPrimArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array to fill
@@ -131,7 +155,16 @@ setPrimArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   -> m ()
 setPrimArray dst doff sz x = do
   arrSz <- A.getSizeofMutablePrimArray dst
-  check "copyMutablePrimArray: index range of out bounds"
+  let explain = L.concat
+        [ "[size: "
+        , show arrSz
+        , ", offset: "
+        , show doff
+        , ", length: "
+        , show sz
+        , "]"
+        ]
+  check ("setPrimArray: index range of out bounds " ++ explain)
     (doff>=0 && (doff+sz)<=arrSz)
     (A.setPrimArray dst doff sz x)
 

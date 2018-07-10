@@ -1,4 +1,6 @@
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Data.Primitive.SmallArray
   ( SmallArray(..)
@@ -7,6 +9,7 @@ module Data.Primitive.SmallArray
   , readSmallArray
   , writeSmallArray
   , indexSmallArray
+  , indexSmallArray##
   , indexSmallArrayM
   , freezeSmallArray
   , thawSmallArray
@@ -21,14 +24,23 @@ module Data.Primitive.SmallArray
   ) where
 
 import Control.Monad.Primitive (PrimMonad,PrimState)
-import Control.Exception (throw, ArrayException(..))
+import Control.Exception (throw, ArrayException(..), Exception, toException)
 import "primitive" Data.Primitive.SmallArray (SmallArray,SmallMutableArray)
 import qualified "primitive" Data.Primitive.SmallArray as A
+import GHC.Exts (raise#)
 import GHC.Stack
+import qualified Data.List as L
 
 check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
 check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.SmallArray.Checked." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
+
+checkUnary :: HasCallStack => String -> Bool -> (# a #) -> (# a #)
+checkUnary _      True  x = x
+checkUnary errMsg False _ = throwUnary (IndexOutOfBounds $ "Data.Primitive.SmallArray.Checked." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
+
+throwUnary :: Exception e => e -> (# a #)
+throwUnary e = raise# (toException e)
 
 newSmallArray :: (HasCallStack, PrimMonad m) => Int -> a -> m (SmallMutableArray (PrimState m) a)
 newSmallArray n x = check "newSmallArray: negative size" (n>=0) (A.newSmallArray n x)
@@ -36,17 +48,44 @@ newSmallArray n x = check "newSmallArray: negative size" (n>=0) (A.newSmallArray
 readSmallArray :: (HasCallStack, PrimMonad m) => SmallMutableArray (PrimState m) a -> Int -> m a
 readSmallArray marr i = do
   let siz = A.sizeofSmallMutableArray marr
-  check "readSmallArray: index of out bounds" (i>=0 && i<siz) (A.readSmallArray marr i)
+      explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("readSmallArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.readSmallArray marr i)
 
 writeSmallArray :: (HasCallStack, PrimMonad m) => SmallMutableArray (PrimState m) a -> Int -> a -> m ()
 writeSmallArray marr i x = do
   let siz = A.sizeofSmallMutableArray marr
-  check "writeSmallArray: index of out bounds" (i>=0 && i<siz) (A.writeSmallArray marr i x)
+      explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("writeSmallArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.writeSmallArray marr i x)
 
 indexSmallArray :: HasCallStack => SmallArray a -> Int -> a
-indexSmallArray arr i = check "indexSmallArray: index of out bounds"
+indexSmallArray arr i = check ("indexSmallArray: index of out bounds " ++ explain)
   (i>=0 && i<A.sizeofSmallArray arr)
   (A.indexSmallArray arr i)
+  where
+  explain = L.concat
+    [ "[size: "
+    , show (A.sizeofSmallArray arr)
+    , ", index: "
+    , show i
+    , "]"
+    ]
+
+indexSmallArray## :: HasCallStack => SmallArray a -> Int -> (# a #)
+indexSmallArray## arr i = checkUnary "indexSmallArray##: index of out bounds"
+  (i>=0 && i<A.sizeofSmallArray arr)
+  (A.indexSmallArray## arr i)
 
 indexSmallArrayM :: (HasCallStack, Monad m) => SmallArray a -> Int -> m a
 indexSmallArrayM arr i = check "indexSmallArrayM: index of out bounds"

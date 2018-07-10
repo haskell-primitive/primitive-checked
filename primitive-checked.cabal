@@ -37,7 +37,7 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.9 && <5
+      base >=4.9.1.0 && <5
     , primitive == 0.6.4.*
   exposed-modules:
     Data.Primitive

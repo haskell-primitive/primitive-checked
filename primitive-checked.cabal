@@ -10,6 +10,7 @@ copyright: 2018 Andrew Martin
 license: BSD3
 license-file: LICENSE
 build-type: Simple
+category: Array
 description:
   .
   This library is intended to be used as a drop-in replacement for
@@ -25,6 +26,9 @@ description:
   The versioning for this library matches the version of primitive
   that is targeted. The first three digits of the version match the
   version of `primitive`. The fourth digit is used for bug fixes.
+  This packages deviates slightly from the PVP in that functions
+  can be added to the API with only a bump to the fourth digit.
+
 
 extra-source-files:
   README.md

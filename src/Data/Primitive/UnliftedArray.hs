@@ -33,6 +33,7 @@ import Control.Monad.Primitive (PrimMonad,PrimState)
 import Control.Exception (throw, ArrayException(..))
 import "primitive" Data.Primitive.UnliftedArray (UnliftedArray,MutableUnliftedArray,PrimUnlifted)
 import qualified "primitive" Data.Primitive.UnliftedArray as A
+import qualified Data.List as L
 import GHC.Stack
 
 check :: HasCallStack => String -> Bool -> a -> a
@@ -56,9 +57,18 @@ writeUnliftedArray marr i x = do
   check "writeUnliftedArray: index of out bounds" (i>=0 && i<siz) (A.writeUnliftedArray marr i x)
 
 indexUnliftedArray :: (HasCallStack, PrimUnlifted a) => UnliftedArray a -> Int -> a
-indexUnliftedArray arr i = check "indexUnliftedArray: index of out bounds"
-  (i>=0 && i<A.sizeofUnliftedArray arr)
-  (A.indexUnliftedArray arr i)
+indexUnliftedArray arr i =
+  let sz = A.sizeofUnliftedArray arr
+      explain = L.concat
+        [ "[size: "
+        , show sz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+   in check ("indexUnliftedArray: index of out bounds " ++ explain)
+        (i>=0 && i<sz)
+        (A.indexUnliftedArray arr i)
 
 indexUnliftedArrayM :: (HasCallStack, Monad m, PrimUnlifted a) => UnliftedArray a -> Int -> m a
 indexUnliftedArrayM arr i = check "indexUnliftedArrayM: index of out bounds"

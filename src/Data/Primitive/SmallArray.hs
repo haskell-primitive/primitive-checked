@@ -21,6 +21,8 @@ module Data.Primitive.SmallArray
   , cloneSmallMutableArray
   , A.sizeofSmallArray
   , A.sizeofSmallMutableArray
+  , A.smallArrayFromList
+  , A.smallArrayFromListN
   ) where
 
 import Control.Monad.Primitive (PrimMonad,PrimState)

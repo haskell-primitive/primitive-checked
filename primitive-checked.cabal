@@ -55,6 +55,7 @@ library
     , Data.Primitive.Addr
     , Data.Primitive.MachDeps
     , Data.Primitive.MutVar
+    , Data.Primitive.MVar
     , Data.Primitive.Ptr
     , Data.Primitive.Types
   default-language: Haskell2010

@@ -24,7 +24,7 @@ module Data.Primitive.PrimArray
   , writePrimArray
   , indexPrimArray
     -- * Freezing and Thawing
-  , A.unsafeFreezePrimArray
+  , unsafeFreezePrimArray
   , A.unsafeThawPrimArray
     -- * Block Operations
   , copyPrimArray
@@ -75,7 +75,8 @@ module Data.Primitive.PrimArray
 
 import Control.Monad.Primitive (PrimMonad,PrimState)
 import Control.Exception (throw, ArrayException(..))
-import Data.Primitive.Types (Prim)
+import Data.Primitive.Types (Prim,sizeOf)
+import Data.Word (Word8)
 import "primitive" Data.Primitive.PrimArray (PrimArray,MutablePrimArray)
 import qualified "primitive" Data.Primitive.PrimArray as A
 import GHC.Stack
@@ -88,11 +89,33 @@ check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.PrimArray." ++ 
 newPrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
 newPrimArray n = check "newPrimArray: negative size" (n>=0) (A.newPrimArray n)
 
+-- | After a call to resizeMutablePrimArray, the original reference to
+-- the mutable array should not be used again. This cannot truly be enforced
+-- except by linear types. To attempt to enforce this, we always make a
+-- copy of the mutable byte array and intentionally corrupt the original
+-- of the original one. The strategy used here to corrupt the array is
+-- simply to write 1 to every bit.
 resizeMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
   -> m (MutablePrimArray (PrimState m) a)
-resizeMutablePrimArray marr n = check "resizeMutablePrimArray: negative size" (n>=0) (A.resizeMutablePrimArray marr n)
+resizeMutablePrimArray marr@(A.MutablePrimArray x) n = check "resizeMutablePrimArray: negative size" (n>=0) $ do
+  sz <- A.getSizeofMutablePrimArray marr
+  marr' <- A.newPrimArray n
+  A.copyMutablePrimArray marr' 0 marr 0 (min sz n)
+  A.setPrimArray (A.MutablePrimArray x) 0 (sz * sizeOf (undefined :: a)) (0xFF :: Word8)
+  return marr'
+
+-- | This corrupts the contents of the mutable argument array.
+unsafeFreezePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
+  => MutablePrimArray (PrimState m) a
+  -> m (PrimArray a)
+unsafeFreezePrimArray marr@(A.MutablePrimArray x) = do
+  sz <- A.getSizeofMutablePrimArray marr
+  marr' <- A.newPrimArray sz
+  A.copyMutablePrimArray marr' 0 marr 0 sz
+  A.setPrimArray (A.MutablePrimArray x) 0 (sz * sizeOf (undefined :: a)) (0xFF :: Word8)
+  A.unsafeFreezePrimArray marr'
 
 #if __GLASGOW_HASKELL__ >= 710
 shrinkMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)

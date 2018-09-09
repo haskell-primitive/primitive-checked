@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE UnboxedTuples #-}
@@ -13,7 +14,7 @@ module Data.Primitive.SmallArray
   , indexSmallArrayM
   , freezeSmallArray
   , thawSmallArray
-  , A.unsafeFreezeSmallArray
+  , unsafeFreezeSmallArray
   , A.unsafeThawSmallArray
   , copySmallArray
   , copySmallMutableArray
@@ -93,6 +94,23 @@ indexSmallArrayM :: (HasCallStack, Monad m) => SmallArray a -> Int -> m a
 indexSmallArrayM arr i = check "indexSmallArrayM: index of out bounds"
     (i>=0 && i<A.sizeofSmallArray arr)
     (A.indexSmallArrayM arr i)
+
+{-# NOINLINE errorUnsafeFreeze #-}
+errorUnsafeFreeze :: a
+errorUnsafeFreeze =
+  error "Data.Primitive.Array.Checked.unsafeFreeze:\nAttempted to read from an array after unsafely freezing it."
+
+unsafeFreezeSmallArray :: (HasCallStack, PrimMonad m)
+  => SmallMutableArray (PrimState m) a
+  -> m (SmallArray a)
+unsafeFreezeSmallArray marr = do
+  let sz = A.sizeofSmallMutableArray marr
+  arr <- A.freezeSmallArray marr 0 sz
+  let go !ix = if ix < sz
+        then A.writeSmallArray marr ix errorUnsafeFreeze >> go (ix + 1)
+        else return ()
+  go 0
+  return arr
 
 freezeSmallArray
   :: (HasCallStack, PrimMonad m)

@@ -35,6 +35,8 @@ module Data.Primitive.ByteArray
   , A.sameMutableByteArray
   , A.byteArrayContents
   , A.mutableByteArrayContents
+  , A.isByteArrayPinned
+  , A.isMutableByteArrayPinned
   ) where
 
 import Control.Monad.Primitive (PrimMonad,PrimState)

@@ -49,12 +49,26 @@ unsafeNewUnliftedArray n = check "unsafeNewUnliftedArray: negative size" (n>=0) 
 readUnliftedArray :: (HasCallStack, PrimMonad m, PrimUnlifted a) => MutableUnliftedArray (PrimState m) a -> Int -> m a
 readUnliftedArray marr i = do
   let siz = A.sizeofMutableUnliftedArray marr
-  check "readUnliftedArray: index of out bounds" (i>=0 && i<siz) (A.readUnliftedArray marr i)
+      explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("readUnliftedArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.readUnliftedArray marr i)
 
 writeUnliftedArray :: (HasCallStack, PrimMonad m, PrimUnlifted a) => MutableUnliftedArray (PrimState m) a -> Int -> a -> m ()
 writeUnliftedArray marr i x = do
   let siz = A.sizeofMutableUnliftedArray marr
-  check "writeUnliftedArray: index of out bounds" (i>=0 && i<siz) (A.writeUnliftedArray marr i x)
+      explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , "]"
+        ]
+  check ("writeUnliftedArray: index of out bounds " ++ explain) (i>=0 && i<siz) (A.writeUnliftedArray marr i x)
 
 indexUnliftedArray :: (HasCallStack, PrimUnlifted a) => UnliftedArray a -> Int -> a
 indexUnliftedArray arr i =

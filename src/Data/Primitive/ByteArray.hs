@@ -32,6 +32,7 @@ module Data.Primitive.ByteArray
   -- * Information
   , A.sizeofByteArray
   , A.sizeofMutableByteArray
+  , A.getSizeofMutableByteArray
   , A.sameMutableByteArray
   , A.byteArrayContents
   , A.mutableByteArrayContents

@@ -1,6 +1,6 @@
 cabal-version: 2.0
 name: primitive-checked
-version: 0.6.4.1
+version: 0.6.4.2
 synopsis: primitive functions with bounds-checking
 homepage: https://github.com/andrewthad/primitive-checked#readme
 bug-reports: https://github.com/andrewthad/primitive-checked/issues
@@ -28,7 +28,6 @@ description:
   version of `primitive`. The fourth digit is used for bug fixes.
   This packages deviates slightly from the PVP in that functions
   can be added to the API with only a bump to the fourth digit.
-
 
 extra-source-files:
   README.md

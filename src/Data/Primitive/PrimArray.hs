@@ -87,7 +87,12 @@ check _      True  x = x
 check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.PrimArray." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
 newPrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a) => Int -> m (MutablePrimArray (PrimState m) a)
-newPrimArray n = check "newPrimArray: negative size" (n>=0) (A.newPrimArray n)
+newPrimArray n =
+    check "newPrimArray: negative size" (n>=0)
+  $ check ("newPrimArray: requested " ++ show n ++ " elements of size " ++ show elemSz) (n * elemSz < 1024*1024*1024)
+  $ A.newPrimArray n
+  where
+  elemSz = sizeOf (undefined :: a)
 
 -- | After a call to resizeMutablePrimArray, the original reference to
 -- the mutable array should not be used again. This cannot truly be enforced

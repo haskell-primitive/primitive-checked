@@ -26,12 +26,15 @@ module Data.Primitive.SmallArray
   , A.smallArrayFromListN
   ) where
 
-import Control.Monad.Primitive (PrimMonad,PrimState)
-import Control.Exception (throw, ArrayException(..), Exception, toException)
+import "primitive" Data.Primitive (sizeOf)
 import "primitive" Data.Primitive.SmallArray (SmallArray,SmallMutableArray)
-import qualified "primitive" Data.Primitive.SmallArray as A
+
+import Control.Exception (throw, ArrayException(..), Exception, toException)
+import Control.Monad.Primitive (PrimMonad,PrimState)
 import GHC.Exts (raise#)
 import GHC.Stack
+
+import qualified "primitive" Data.Primitive.SmallArray as A
 import qualified Data.List as L
 
 check :: HasCallStack => String -> Bool -> a -> a
@@ -46,7 +49,12 @@ throwUnary :: Exception e => e -> (# a #)
 throwUnary e = raise# (toException e)
 
 newSmallArray :: (HasCallStack, PrimMonad m) => Int -> a -> m (SmallMutableArray (PrimState m) a)
-newSmallArray n x = check "newSmallArray: negative size" (n>=0) (A.newSmallArray n x)
+newSmallArray n x =
+    check "newSmallArray: negative size" (n>=0)
+  $ check ("newSmallArray: requested " ++ show n ++ " elements") (n * ptrSz < 1024*1024*1024)
+  $ A.newSmallArray n x
+  where
+  ptrSz = sizeOf (undefined :: Int)
 
 readSmallArray :: (HasCallStack, PrimMonad m) => SmallMutableArray (PrimState m) a -> Int -> m a
 readSmallArray marr i = do

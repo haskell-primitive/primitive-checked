@@ -68,7 +68,10 @@ elementSizeofMutableByteArray :: forall s a. Prim a => Proxy a -> MutableByteArr
 elementSizeofMutableByteArray _ arr = div (A.sizeofMutableByteArray arr) (sizeOf (undefined :: a))
 
 newByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
-newByteArray n = check "newByteArray: negative size" (n>=0) (A.newByteArray n)
+newByteArray n =
+    check "newByteArray: negative size" (n>=0)
+  $ check ("newByteArray: reqeusted " ++ show n ++ " bytes") (n<1024*1024*1024)
+  $ (A.newByteArray n)
 
 newPinnedByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
 newPinnedByteArray n = check "newPinnedByteArray: negative size" (n>=0) (A.newPinnedByteArray n)

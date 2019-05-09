@@ -29,22 +29,35 @@ module Data.Primitive.UnliftedArray
   , A.unliftedArrayFromList
   ) where
 
-import Control.Monad.Primitive (PrimMonad,PrimState)
-import Control.Exception (throw, ArrayException(..))
+import "primitive" Data.Primitive (sizeOf)
 import "primitive" Data.Primitive.UnliftedArray (UnliftedArray,MutableUnliftedArray,PrimUnlifted)
+
+import Control.Exception (throw, ArrayException(..))
+import Control.Monad.Primitive (PrimMonad,PrimState)
+import GHC.Stack
+
 import qualified "primitive" Data.Primitive.UnliftedArray as A
 import qualified Data.List as L
-import GHC.Stack
 
 check :: HasCallStack => String -> Bool -> a -> a
 check _      True  x = x
 check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.UnliftedArray.Checked." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
 newUnliftedArray :: (HasCallStack, PrimMonad m, PrimUnlifted a) => Int -> a -> m (MutableUnliftedArray (PrimState m) a)
-newUnliftedArray n x = check "newUnliftedArray: negative size" (n>=0) (A.newUnliftedArray n x)
+newUnliftedArray n x =
+    check "newUnliftedArray: negative size" (n>=0)
+  $ check ("newUnliftedArray: requested " ++ show n ++ " elements") (n * ptrSz < 1024*1024*1024)
+  $ A.newUnliftedArray n x
+  where
+  ptrSz = sizeOf (undefined :: Int)
 
 unsafeNewUnliftedArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableUnliftedArray (PrimState m) a)
-unsafeNewUnliftedArray n = check "unsafeNewUnliftedArray: negative size" (n>=0) (A.unsafeNewUnliftedArray n)
+unsafeNewUnliftedArray n =
+    check "unsafeNewUnliftedArray: negative size" (n>=0)
+  $ check ("unsafeNewUnliftedArray: requested " ++ show n ++ " elements") (n * ptrSz < 1024*1024*1024)
+  $ A.unsafeNewUnliftedArray n
+  where
+  ptrSz = sizeOf (undefined :: Int)
 
 readUnliftedArray :: (HasCallStack, PrimMonad m, PrimUnlifted a) => MutableUnliftedArray (PrimState m) a -> Int -> m a
 readUnliftedArray marr i = do

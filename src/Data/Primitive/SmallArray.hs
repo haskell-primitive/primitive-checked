@@ -108,6 +108,8 @@ errorUnsafeFreeze :: a
 errorUnsafeFreeze =
   error "Data.Primitive.Array.Checked.unsafeFreeze:\nAttempted to read from an array after unsafely freezing it."
 
+-- | This installs error thunks in the argument array so that
+-- any attempt to use it after an unsafeFreeze will fail.
 unsafeFreezeSmallArray :: (HasCallStack, PrimMonad m)
   => SmallMutableArray (PrimState m) a
   -> m (SmallArray a)

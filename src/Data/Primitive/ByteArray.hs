@@ -56,14 +56,6 @@ check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ 
 elementSizeofByteArray :: forall a. Prim a => Proxy a -> ByteArray -> Int
 elementSizeofByteArray _ arr = div (A.sizeofByteArray arr) (sizeOf (undefined :: a))
 
-elementSizeofByteArrayPermissive :: forall a. Prim a => Proxy a -> ByteArray -> Int
-elementSizeofByteArrayPermissive _ arr =
-  div (A.sizeofByteArray arr) (sizeOf (undefined :: a)) + 
-  ( if rem (A.sizeofByteArray arr) (sizeOf (undefined :: a)) == 0
-      then 0
-      else 1
-  ) 
-
 elementSizeofMutableByteArray :: forall s a. Prim a => Proxy a -> MutableByteArray s -> Int
 elementSizeofMutableByteArray _ arr = div (A.sizeofMutableByteArray arr) (sizeOf (undefined :: a))
 
@@ -97,7 +89,7 @@ writeByteArray marr i x = do
 -- the last machine word of the byte array.
 indexByteArray :: forall a. (HasCallStack, Prim a) => ByteArray -> Int -> a
 indexByteArray arr i = check "indexByteArray: index of out bounds"
-  (i>=0 && i< elementSizeofByteArrayPermissive (Proxy :: Proxy a) arr)
+  (i>=0 && i< elementSizeofByteArray (Proxy :: Proxy a) arr)
   (A.indexByteArray arr i)
 
 copyByteArray :: forall m. (HasCallStack, PrimMonad m)
@@ -157,7 +149,7 @@ setByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   -> a -- ^ value to fill with
   -> m ()
 setByteArray dst doff sz x  = 
-  check "copyMutableByteArray: index range of out bounds"
+  check "setByteArray: index range of out bounds"
     (doff>=0 && (doff+sz)<=elementSizeofMutableByteArray (Proxy :: Proxy a) dst)
     (A.setByteArray dst doff sz x)
 

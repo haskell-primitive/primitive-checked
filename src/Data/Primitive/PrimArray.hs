@@ -111,7 +111,7 @@ resizeMutablePrimArray marr@(A.MutablePrimArray x) n = check "resizeMutablePrimA
   A.setPrimArray (A.MutablePrimArray x) 0 (sz * sizeOf (undefined :: a)) (0xFF :: Word8)
   return marr'
 
--- | This corrupts the contents of the mutable argument array.
+-- | This corrupts the contents of the argument array.
 unsafeFreezePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> m (PrimArray a)

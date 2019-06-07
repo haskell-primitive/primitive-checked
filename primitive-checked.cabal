@@ -1,6 +1,6 @@
 cabal-version: 2.2
 name: primitive-checked
-version: 0.6.4.3
+version: 0.7.0.0
 synopsis: primitive functions with bounds-checking
 homepage: https://github.com/andrewthad/primitive-checked#readme
 bug-reports: https://github.com/andrewthad/primitive-checked/issues
@@ -41,17 +41,15 @@ library
       src
   build-depends:
       base >=4.9.1.0 && <5
-    , primitive == 0.6.4.*
+    , primitive == 0.7.0.*
   exposed-modules:
     Data.Primitive
     Data.Primitive.Array
     Data.Primitive.SmallArray
     Data.Primitive.ByteArray
     Data.Primitive.PrimArray
-    Data.Primitive.UnliftedArray
   reexported-modules:
       Control.Monad.Primitive
-    , Data.Primitive.Addr
     , Data.Primitive.MachDeps
     , Data.Primitive.MutVar
     , Data.Primitive.MVar

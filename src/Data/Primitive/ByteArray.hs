@@ -29,6 +29,7 @@ module Data.Primitive.ByteArray
   , moveByteArray
   , setByteArray
   , fillByteArray
+  , A.copyMutableByteArrayToAddr
   -- * Information
   , A.sizeofByteArray
   , A.sizeofMutableByteArray
@@ -148,7 +149,7 @@ setByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   -> Int -- ^ number of values to fill
   -> a -- ^ value to fill with
   -> m ()
-setByteArray dst doff sz x  = 
+setByteArray dst doff sz x  =
   check "setByteArray: index range of out bounds"
     (doff>=0 && (doff+sz)<=elementSizeofMutableByteArray (Proxy :: Proxy a) dst)
     (A.setByteArray dst doff sz x)

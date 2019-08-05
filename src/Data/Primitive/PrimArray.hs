@@ -219,8 +219,22 @@ copyPrimArray :: forall m a.
   -> Int -- ^ number of elements to copy
   -> m ()
 copyPrimArray marr s1 arr s2 l = do
-  siz <- A.getSizeofMutablePrimArray marr
-  check "copyPrimArray: index range of out bounds"
-    (s1>=0 && s2>=0 && l>=0 && (s2+l)<= A.sizeofPrimArray arr && (s1+l)<=siz)
+  dstSz <- A.getSizeofMutablePrimArray marr
+  let srcSz = A.sizeofPrimArray arr
+  let explain = L.concat
+        [ "[dst_sz: "
+        , show dstSz
+        , ", dst_off: "
+        , show s1
+        , ", src_sz: "
+        , show srcSz
+        , ", src_off: "
+        , show s2
+        , ", len: "
+        , show l
+        , "]"
+        ]
+  check ("copyPrimArray: index range of out bounds " ++ explain)
+    (s1>=0 && s2>=0 && l>=0 && (s2+l)<= srcSz && (s1+l)<=dstSz)
     (A.copyPrimArray marr s1 arr s2 l)
 

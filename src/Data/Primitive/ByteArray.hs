@@ -48,6 +48,7 @@ import Data.Proxy (Proxy(..))
 import Data.Word (Word8)
 import "primitive" Data.Primitive.ByteArray (ByteArray,MutableByteArray)
 import qualified "primitive" Data.Primitive.ByteArray as A
+import qualified Data.List as L
 import GHC.Stack
 
 check :: HasCallStack => String -> Bool -> a -> a
@@ -57,8 +58,11 @@ check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ 
 elementSizeofByteArray :: forall a. Prim a => Proxy a -> ByteArray -> Int
 elementSizeofByteArray _ arr = div (A.sizeofByteArray arr) (sizeOf (undefined :: a))
 
-elementSizeofMutableByteArray :: forall s a. Prim a => Proxy a -> MutableByteArray s -> Int
-elementSizeofMutableByteArray _ arr = div (A.sizeofMutableByteArray arr) (sizeOf (undefined :: a))
+getElementSizeofMutableByteArray :: forall m a. (PrimMonad m, Prim a)
+  => Proxy a -> MutableByteArray (PrimState m) -> m Int
+getElementSizeofMutableByteArray _ arr = do
+  sz <- A.getSizeofMutableByteArray arr
+  return (div sz (sizeOf (undefined :: a)))
 
 newByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
 newByteArray n =
@@ -77,13 +81,24 @@ resizeMutableByteArray a n = check "resizeMutableByteArray: negative size" (n>=0
 
 readByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> m a
 readByteArray marr i = do
-  let siz = elementSizeofMutableByteArray (Proxy :: Proxy a) marr
+  siz <- getElementSizeofMutableByteArray (Proxy :: Proxy a) marr
   check "readByteArray: index of out bounds" (i>=0 && i<siz) (A.readByteArray marr i)
 
 writeByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m) => MutableByteArray (PrimState m) -> Int -> a -> m ()
 writeByteArray marr i x = do
-  let siz = elementSizeofMutableByteArray (Proxy :: Proxy a) marr
-  check "writeByteArray: index of out bounds" (i>=0 && i<siz) (A.writeByteArray marr i x)
+  siz <- getElementSizeofMutableByteArray (Proxy :: Proxy a) marr
+  let explain = L.concat
+        [ "[size: "
+        , show siz
+        , ", index: "
+        , show i
+        , ", elem_sz: "
+        , show (sizeOf (undefined :: a))
+        , "]"
+        ]
+  check ("writeByteArray: index of out bounds " ++ explain)
+    (i>=0 && i<siz)
+    (A.writeByteArray marr i x)
 
 -- This one is a little special. We allow users to index past the
 -- end of the byte array as long as the content grabbed is within
@@ -149,8 +164,9 @@ setByteArray :: forall m a. (HasCallStack, Prim a, PrimMonad m)
   -> Int -- ^ number of values to fill
   -> a -- ^ value to fill with
   -> m ()
-setByteArray dst doff sz x  =
+setByteArray dst doff sz x = do
+  siz <- getElementSizeofMutableByteArray (Proxy :: Proxy a) dst
   check "setByteArray: index range of out bounds"
-    (doff>=0 && (doff+sz)<=elementSizeofMutableByteArray (Proxy :: Proxy a) dst)
+    (doff>=0 && (doff+sz)<=siz)
     (A.setByteArray dst doff sz x)
 

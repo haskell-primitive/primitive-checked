@@ -204,10 +204,23 @@ copyMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   -> Int -- ^ number of elements to copy
   -> m ()
 copyMutablePrimArray marr1 s1 marr2 s2 l = do
-  siz1 <- A.getSizeofMutablePrimArray marr1
-  siz2 <- A.getSizeofMutablePrimArray marr2
-  check "copyMutablePrimArray: index range of out bounds"
-    (s1>=0 && s2>=0 && l>=0 && (s2+l)<=siz2 && (s1+l)<=siz1)
+  dstSz <- A.getSizeofMutablePrimArray marr1
+  srcSz <- A.getSizeofMutablePrimArray marr2
+  let explain = L.concat
+        [ "[dst_sz: "
+        , show dstSz
+        , ", dst_off: "
+        , show s1
+        , ", src_sz: "
+        , show srcSz
+        , ", src_off: "
+        , show s2
+        , ", len: "
+        , show l
+        , "]"
+        ]
+  check ("copyMutablePrimArray: index range of out bounds " ++ explain)
+    (s1>=0 && s2>=0 && l>=0 && (s2+l)<=srcSz && (s1+l)<=dstSz)
     (A.copyMutablePrimArray marr1 s1 marr2 s2 l)
 
 copyPrimArray :: forall m a.

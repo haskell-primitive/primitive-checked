@@ -14,6 +14,7 @@ module Data.Primitive.Array
   , indexArray##
   , freezeArray
   , thawArray
+  , A.runArray
   , unsafeFreezeArray
   , A.unsafeThawArray
   , A.sameMutableArray

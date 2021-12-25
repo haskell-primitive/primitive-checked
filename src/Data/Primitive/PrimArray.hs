@@ -125,10 +125,9 @@ resizeMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
   -> m (MutablePrimArray (PrimState m) a)
-resizeMutablePrimArray marr@(A.MutablePrimArray x) n = check "resizeMutablePrimArray: negative size" (n>=0) $ do
-  sz <- A.getSizeofMutablePrimArray marr
-  marr' <- A.newPrimArray n
-  A.copyMutablePrimArray marr' 0 marr 0 (min sz n)
+resizeMutablePrimArray marr@(A.MutablePrimArray x) n = check "resizeMutablePrimArray: negative size" (n >= 0) $ do
+  let sz = A.sizeofMutablePrimArray marr
+  marr' <- A.cloneMutablePrimArray marr 0 sz
   A.setPrimArray (A.MutablePrimArray x) 0 (sz * sizeOf (undefined :: a)) (0xFF :: Word8)
   return marr'
 
@@ -157,11 +156,10 @@ unsafeFreezePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> m (PrimArray a)
 unsafeFreezePrimArray marr@(A.MutablePrimArray x) = do
-  sz <- A.getSizeofMutablePrimArray marr
-  marr' <- A.newPrimArray sz
-  A.copyMutablePrimArray marr' 0 marr 0 sz
+  let sz = A.sizeofMutablePrimArray marr
+  arr <- A.freezePrimArray marr 0 sz
   A.setPrimArray (A.MutablePrimArray x) 0 (sz * sizeOf (undefined :: a)) (0xFF :: Word8)
-  A.unsafeFreezePrimArray marr'
+  return arr
 
 shrinkMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a

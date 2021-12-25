@@ -31,10 +31,10 @@ module Data.Primitive.Array
   , A.traverseArrayP
   ) where
 
-import Control.Monad.Primitive (PrimMonad,PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Exception (throw, ArrayException(..), Exception, toException)
 import qualified Data.List as L
-import "primitive" Data.Primitive.Array (Array,MutableArray)
+import "primitive" Data.Primitive.Array (Array, MutableArray)
 import qualified "primitive" Data.Primitive.Array as A
 import GHC.Exts (raise#)
 import GHC.Stack
@@ -83,7 +83,10 @@ errorUnsafeFreeze :: a
 errorUnsafeFreeze =
   error "Data.Primitive.Array.unsafeFreeze:\nAttempted to read from an array after unsafely freezing it."
 
-unsafeFreezeArray :: (HasCallStack, PrimMonad m)
+-- | This installs error thunks in the argument array so that
+-- any attempt to use it after an unsafeFreeze will fail.
+unsafeFreezeArray
+  :: (HasCallStack, PrimMonad m)
   => MutableArray (PrimState m) a
   -> m (Array a)
 unsafeFreezeArray marr = do
@@ -115,26 +118,28 @@ thawArray arr s l = check "thawArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofArray arr)
   (A.thawArray arr s l)
 
-copyArray :: (HasCallStack, PrimMonad m)
-          => MutableArray (PrimState m) a    -- ^ destination array
-          -> Int                             -- ^ offset into destination array
-          -> Array a                         -- ^ source array
-          -> Int                             -- ^ offset into source array
-          -> Int                             -- ^ number of elements to copy
-          -> m ()
+copyArray
+  :: (HasCallStack, PrimMonad m)
+  => MutableArray (PrimState m) a -- ^ destination array
+  -> Int                          -- ^ offset into destination array
+  -> Array a                      -- ^ source array
+  -> Int                          -- ^ offset into source array
+  -> Int                          -- ^ number of elements to copy
+  -> m ()
 copyArray marr s1 arr s2 l = do
   let siz = A.sizeofMutableArray marr
   check "copyArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= A.sizeofArray arr && s1 + l <= siz)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz && s2 + l <= A.sizeofArray arr)
     (A.copyArray marr s1 arr s2 l)
 
-copyMutableArray :: (HasCallStack, PrimMonad m)
-          => MutableArray (PrimState m) a    -- ^ destination array
-          -> Int                             -- ^ offset into destination array
-          -> MutableArray (PrimState m) a    -- ^ source array
-          -> Int                             -- ^ offset into source array
-          -> Int                             -- ^ number of elements to copy
-          -> m ()
+copyMutableArray
+  :: (HasCallStack, PrimMonad m)
+  => MutableArray (PrimState m) a -- ^ destination array
+  -> Int                          -- ^ offset into destination array
+  -> MutableArray (PrimState m) a -- ^ source array
+  -> Int                          -- ^ offset into source array
+  -> Int                          -- ^ number of elements to copy
+  -> m ()
 copyMutableArray marr1 s1 marr2 s2 l = do
   let siz1 = A.sizeofMutableArray marr1
   let siz2 = A.sizeofMutableArray marr2
@@ -152,23 +157,25 @@ copyMutableArray marr1 s1 marr2 s2 l = do
         , "]"
         ]
   check ("copyMutableArray: index range of out bounds " ++ explain)
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= siz2 && s1 + l <= siz1)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz1 && s2 + l <= siz2)
     (A.copyMutableArray marr1 s1 marr2 s2 l)
 
-cloneArray :: HasCallStack
-           => Array a -- ^ source array
-           -> Int     -- ^ offset into destination array
-           -> Int     -- ^ number of elements to copy
-           -> Array a
+cloneArray
+  :: HasCallStack
+  => Array a -- ^ source array
+  -> Int     -- ^ offset into source array
+  -> Int     -- ^ number of elements to copy
+  -> Array a
 cloneArray arr s l = check "cloneArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofArray arr)
   (A.cloneArray arr s l)
 
-cloneMutableArray :: (HasCallStack, PrimMonad m)
-        => MutableArray (PrimState m) a -- ^ source array
-        -> Int                          -- ^ offset into destination array
-        -> Int                          -- ^ number of elements to copy
-        -> m (MutableArray (PrimState m) a)
+cloneMutableArray
+  :: (HasCallStack, PrimMonad m)
+  => MutableArray (PrimState m) a -- ^ source array
+  -> Int                          -- ^ offset into source array
+  -> Int                          -- ^ number of elements to copy
+  -> m (MutableArray (PrimState m) a)
 cloneMutableArray marr s l = check "cloneMutableArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofMutableArray marr)
   (A.cloneMutableArray marr s l)

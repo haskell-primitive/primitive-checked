@@ -1,13 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UnboxedTuples #-}
-
-{-# OPTIONS_GHC -Wall #-}
 
 module Data.Primitive.PrimArray
   ( -- * Types
@@ -66,6 +61,7 @@ module Data.Primitive.PrimArray
   , A.filterPrimArray
   , A.mapMaybePrimArray
     -- * Effectful Map/Create
+
     -- ** Lazy Applicative
   , A.traversePrimArray
   , A.itraversePrimArray
@@ -82,11 +78,11 @@ module Data.Primitive.PrimArray
   , A.mapMaybePrimArrayP
   ) where
 
-import Control.Monad.Primitive (PrimMonad,PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Exception (throw, ArrayException(..))
 import Data.Primitive.Types (Prim, Ptr, sizeOf)
 import Data.Word (Word8)
-import "primitive" Data.Primitive.PrimArray (PrimArray,MutablePrimArray)
+import "primitive" Data.Primitive.PrimArray (PrimArray, MutablePrimArray)
 import qualified "primitive" Data.Primitive.PrimArray as A
 import GHC.Stack
 import qualified Data.List as L
@@ -139,8 +135,8 @@ resizeMutablePrimArray marr@(A.MutablePrimArray x) n = check "resizeMutablePrimA
 freezePrimArray
   :: (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ source
-  -> Int                          -- ^ offset
-  -> Int                          -- ^ length
+  -> Int                              -- ^ offset
+  -> Int                              -- ^ length
   -> m (PrimArray a)
 freezePrimArray marr s l = check "freezePrimArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofMutablePrimArray marr)
@@ -149,8 +145,8 @@ freezePrimArray marr s l = check "freezePrimArray: index range of out bounds"
 thawPrimArray
   :: (HasCallStack, PrimMonad m, Prim a)
   => PrimArray a -- ^ source
-  -> Int     -- ^ offset
-  -> Int     -- ^ length
+  -> Int         -- ^ offset
+  -> Int         -- ^ length
   -> m (MutablePrimArray (PrimState m) a)
 thawPrimArray arr s l = check "thawPrimArray: index range of out bounds"
     (s >= 0 && l >= 0 && s + l <= A.sizeofPrimArray arr)
@@ -187,8 +183,7 @@ readPrimArray marr i = do
         ]
   check ("readPrimArray: index out of bounds " ++ explain) (i >= 0 && i < siz) (A.readPrimArray marr i)
 
-writePrimArray ::
-     (HasCallStack, Prim a, PrimMonad m)
+writePrimArray :: (HasCallStack, Prim a, PrimMonad m)
   => MutablePrimArray (PrimState m) a -- ^ array
   -> Int -- ^ index
   -> a -- ^ element
@@ -263,7 +258,7 @@ copyPrimArray marr s1 arr s2 l = do
         , "]"
         ]
   check ("copyPrimArray: index range of out bounds " ++ explain)
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= srcSz && s1 + l <= dstSz)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= dstSz && s2 + l <= srcSz)
     (A.copyPrimArray marr s1 arr s2 l)
 
 copyMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
@@ -290,7 +285,7 @@ copyMutablePrimArray marr1 s1 marr2 s2 l = do
         , "]"
         ]
   check ("copyMutablePrimArray: index range of out bounds " ++ explain)
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= srcSz && s1 + l <= dstSz)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= dstSz && s2 + l <= srcSz)
     (A.copyMutablePrimArray marr1 s1 marr2 s2 l)
 
 copyPrimArrayToPtr :: forall m a. (HasCallStack, PrimMonad m, Prim a)
@@ -337,8 +332,8 @@ copyMutablePrimArrayToPtr ptr marr s l = do
 
 clonePrimArray :: (HasCallStack, Prim a)
   => PrimArray a -- ^ source array
-  -> Int     -- ^ offset into destination array
-  -> Int     -- ^ number of elements to copy
+  -> Int         -- ^ offset into source array
+  -> Int         -- ^ number of elements to copy
   -> PrimArray a
 clonePrimArray arr s l = check "clonePrimArray: index range of out bounds"
     (s >= 0 && l >= 0 && s + l <= A.sizeofPrimArray arr)
@@ -346,8 +341,8 @@ clonePrimArray arr s l = check "clonePrimArray: index range of out bounds"
 
 cloneMutablePrimArray :: (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a -- ^ source array
-  -> Int                          -- ^ offset into destination array
-  -> Int                          -- ^ number of elements to copy
+  -> Int                              -- ^ offset into source array
+  -> Int                              -- ^ number of elements to copy
   -> m (MutablePrimArray (PrimState m) a)
 cloneMutablePrimArray marr s l = check "cloneMutablePrimArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofMutablePrimArray marr)

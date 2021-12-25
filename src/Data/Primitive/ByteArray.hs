@@ -5,8 +5,8 @@
 
 module Data.Primitive.ByteArray
   ( -- * Types
-    A.ByteArray(..)
-  , A.MutableByteArray(..)
+    ByteArray(..)
+  , MutableByteArray(..)
   , A.ByteArray#
   , A.MutableByteArray#
     -- * Allocation
@@ -59,7 +59,7 @@ import Control.Exception (throw, ArrayException(..))
 import Data.Primitive.Types (Prim, Ptr, sizeOf)
 import Data.Proxy (Proxy(..))
 import Data.Word (Word8)
-import "primitive" Data.Primitive.ByteArray (ByteArray,MutableByteArray)
+import "primitive" Data.Primitive.ByteArray (ByteArray, MutableByteArray)
 import qualified "primitive" Data.Primitive.ByteArray as A
 import qualified Data.List as L
 import GHC.Stack
@@ -69,13 +69,13 @@ check _      True  x = x
 check errMsg False _ = throw (IndexOutOfBounds $ "Data.Primitive.ByteArray." ++ errMsg ++ "\n" ++ prettyCallStack callStack)
 
 elementSizeofByteArray :: forall a. Prim a => Proxy a -> ByteArray -> Int
-elementSizeofByteArray _ arr = div (A.sizeofByteArray arr) (sizeOf (undefined :: a))
+elementSizeofByteArray _ arr = A.sizeofByteArray arr `div` sizeOf (undefined :: a)
 
 getElementSizeofMutableByteArray :: forall m a. (PrimMonad m, Prim a)
   => Proxy a -> MutableByteArray (PrimState m) -> m Int
 getElementSizeofMutableByteArray _ arr = do
   sz <- A.getSizeofMutableByteArray arr
-  return (div sz (sizeOf (undefined :: a)))
+  return (sz `div` sizeOf (undefined :: a))
 
 newByteArray :: (HasCallStack, PrimMonad m) => Int -> m (MutableByteArray (PrimState m))
 newByteArray n =
@@ -137,8 +137,8 @@ compareByteArrays arr1 off1 arr2 off2 len = check "compareByteArrays: index rang
 freezeByteArray
   :: (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ source
-  -> Int                          -- ^ offset
-  -> Int                          -- ^ length
+  -> Int                            -- ^ offset
+  -> Int                            -- ^ length
   -> m ByteArray
 freezeByteArray marr s l = check "freezeByteArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofMutableByteArray marr)
@@ -147,8 +147,8 @@ freezeByteArray marr s l = check "freezeByteArray: index range of out bounds"
 thawByteArray
   :: (HasCallStack, PrimMonad m)
   => ByteArray -- ^ source
-  -> Int     -- ^ offset
-  -> Int     -- ^ length
+  -> Int       -- ^ offset
+  -> Int       -- ^ length
   -> m (MutableByteArray (PrimState m))
 thawByteArray arr s l = check "thawByteArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofByteArray arr)
@@ -164,7 +164,7 @@ copyByteArray :: forall m. (HasCallStack, PrimMonad m)
 copyByteArray marr s1 arr s2 l = do
   let siz = A.sizeofMutableByteArray marr
   check "copyByteArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= A.sizeofByteArray arr && s1 + l <= siz)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz && s2 + l <= A.sizeofByteArray arr)
     (A.copyByteArray marr s1 arr s2 l)
 
 copyMutableByteArray :: forall m. (HasCallStack, PrimMonad m)
@@ -178,7 +178,7 @@ copyMutableByteArray marr1 s1 marr2 s2 l = do
   let siz1 = A.sizeofMutableByteArray marr1
   let siz2 = A.sizeofMutableByteArray marr2
   check "copyMutableByteArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= siz2 && s1 + l <= siz1)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz1 && s2 + l <= siz2)
     (A.copyMutableByteArray marr1 s1 marr2 s2 l)
 
 copyByteArrayToPtr :: forall m a. (HasCallStack, PrimMonad m, Prim a)
@@ -276,7 +276,7 @@ moveByteArray marr1 s1 marr2 s2 l = do
   let siz1 = A.sizeofMutableByteArray marr1
   let siz2 = A.sizeofMutableByteArray marr2
   check "moveByteArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= siz2 && s1 + l <= siz1)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz1 && s2 + l <= siz2)
     (A.moveByteArray marr1 s1 marr2 s2 l)
 
 fillByteArray :: (HasCallStack, PrimMonad m)
@@ -301,8 +301,8 @@ setByteArray dst doff sz x = do
 
 cloneByteArray :: HasCallStack
   => ByteArray -- ^ source array
-  -> Int     -- ^ offset into destination array
-  -> Int     -- ^ number of bytes to copy
+  -> Int       -- ^ offset into source array
+  -> Int       -- ^ number of bytes to copy
   -> ByteArray
 cloneByteArray arr s l = check "cloneByteArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofByteArray arr)
@@ -310,8 +310,8 @@ cloneByteArray arr s l = check "cloneByteArray: index range of out bounds"
 
 cloneMutableByteArray :: (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ source array
-  -> Int                          -- ^ offset into destination array
-  -> Int                          -- ^ number of bytes to copy
+  -> Int                            -- ^ offset into source array
+  -> Int                            -- ^ number of bytes to copy
   -> m (MutableByteArray (PrimState m))
 cloneMutableByteArray marr s l = check "cloneMutableByteArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofMutableByteArray marr)

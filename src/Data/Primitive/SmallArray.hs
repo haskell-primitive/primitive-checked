@@ -34,10 +34,10 @@ module Data.Primitive.SmallArray
   ) where
 
 import "primitive" Data.Primitive (sizeOf)
-import "primitive" Data.Primitive.SmallArray (SmallArray,SmallMutableArray)
+import "primitive" Data.Primitive.SmallArray (SmallArray, SmallMutableArray)
 
 import Control.Exception (throw, ArrayException(..), Exception, toException)
-import Control.Monad.Primitive (PrimMonad,PrimState)
+import Control.Monad.Primitive (PrimMonad, PrimState)
 import GHC.Exts (raise#)
 import GHC.Stack
 
@@ -132,8 +132,8 @@ unsafeFreezeSmallArray marr = do
 freezeSmallArray
   :: (HasCallStack, PrimMonad m)
   => SmallMutableArray (PrimState m) a -- ^ source
-  -> Int                          -- ^ offset
-  -> Int                          -- ^ length
+  -> Int                               -- ^ offset
+  -> Int                               -- ^ length
   -> m (SmallArray a)
 freezeSmallArray marr s l = check "freezeSmallArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofSmallMutableArray marr)
@@ -142,54 +142,54 @@ freezeSmallArray marr s l = check "freezeSmallArray: index range of out bounds"
 thawSmallArray
   :: (HasCallStack, PrimMonad m)
   => SmallArray a -- ^ source
-  -> Int     -- ^ offset
-  -> Int     -- ^ length
+  -> Int          -- ^ offset
+  -> Int          -- ^ length
   -> m (SmallMutableArray (PrimState m) a)
 thawSmallArray arr s l = check "thawSmallArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofSmallArray arr)
   (A.thawSmallArray arr s l)
 
 copySmallArray :: (HasCallStack, PrimMonad m)
-          => SmallMutableArray (PrimState m) a    -- ^ destination array
-          -> Int                             -- ^ offset into destination array
-          -> SmallArray a                         -- ^ source array
-          -> Int                             -- ^ offset into source array
-          -> Int                             -- ^ number of elements to copy
-          -> m ()
+  => SmallMutableArray (PrimState m) a -- ^ destination array
+  -> Int                               -- ^ offset into destination array
+  -> SmallArray a                      -- ^ source array
+  -> Int                               -- ^ offset into source array
+  -> Int                               -- ^ number of elements to copy
+  -> m ()
 copySmallArray marr s1 arr s2 l = do
   let siz = A.sizeofSmallMutableArray marr
   check "copySmallArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= A.sizeofSmallArray arr && s1 + l <= siz)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz && s2 + l <= A.sizeofSmallArray arr)
     (A.copySmallArray marr s1 arr s2 l)
 
 copySmallMutableArray :: (HasCallStack, PrimMonad m)
-          => SmallMutableArray (PrimState m) a    -- ^ destination array
-          -> Int                             -- ^ offset into destination array
-          -> SmallMutableArray (PrimState m) a    -- ^ source array
-          -> Int                             -- ^ offset into source array
-          -> Int                             -- ^ number of elements to copy
-          -> m ()
+  => SmallMutableArray (PrimState m) a -- ^ destination array
+  -> Int                               -- ^ offset into destination array
+  -> SmallMutableArray (PrimState m) a -- ^ source array
+  -> Int                               -- ^ offset into source array
+  -> Int                               -- ^ number of elements to copy
+  -> m ()
 copySmallMutableArray marr1 s1 marr2 s2 l = do
   let siz1 = A.sizeofSmallMutableArray marr1
   let siz2 = A.sizeofSmallMutableArray marr2
   check "copySmallMutableArray: index range of out bounds"
-    (s1 >= 0 && s2 >= 0 && l >= 0 && s2 + l <= siz2 && s1 + l <= siz1)
+    (s1 >= 0 && s2 >= 0 && l >= 0 && s1 + l <= siz1 && s2 + l <= siz2)
     (A.copySmallMutableArray marr1 s1 marr2 s2 l)
 
 cloneSmallArray :: HasCallStack
-           => SmallArray a -- ^ source array
-           -> Int     -- ^ offset into destination array
-           -> Int     -- ^ number of elements to copy
-           -> SmallArray a
+  => SmallArray a -- ^ source array
+  -> Int          -- ^ offset into source array
+  -> Int          -- ^ number of elements to copy
+  -> SmallArray a
 cloneSmallArray arr s l = check "cloneSmallArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofSmallArray arr)
   (A.cloneSmallArray arr s l)
 
 cloneSmallMutableArray :: (HasCallStack, PrimMonad m)
-        => SmallMutableArray (PrimState m) a -- ^ source array
-        -> Int                          -- ^ offset into destination array
-        -> Int                          -- ^ number of elements to copy
-        -> m (SmallMutableArray (PrimState m) a)
+  => SmallMutableArray (PrimState m) a -- ^ source array
+  -> Int                               -- ^ offset into source array
+  -> Int                               -- ^ number of elements to copy
+  -> m (SmallMutableArray (PrimState m) a)
 cloneSmallMutableArray marr s l = check "cloneSmallMutableArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofSmallMutableArray marr)
   (A.cloneSmallMutableArray marr s l)

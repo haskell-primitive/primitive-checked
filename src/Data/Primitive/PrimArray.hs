@@ -117,12 +117,12 @@ newAlignedPinnedPrimArray n =
   where
   elemSz = sizeOf (undefined :: a)
 
--- | After a call to resizeMutablePrimArray, the original reference to
+-- | After a call to 'resizeMutablePrimArray', the original reference to
 -- the mutable array should not be used again. This cannot truly be enforced
 -- except by linear types. To attempt to enforce this, we always make a
 -- copy of the mutable primitive array and intentionally corrupt the original
 -- of the original one. The strategy used here to corrupt the array is
--- simply to write 1 to every bit.
+-- simply to write @0xFF@ to every byte.
 resizeMutablePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> Int -- ^ new size
@@ -153,7 +153,7 @@ thawPrimArray arr s l = check "thawPrimArray: index range of out bounds"
     (s >= 0 && l >= 0 && s + l <= A.sizeofPrimArray arr)
     (A.thawPrimArray arr s l)
 
--- | This corrupts the contents of the argument array.
+-- | This corrupts the contents of the argument array by writing @0xFF@ to every byte.
 unsafeFreezePrimArray :: forall m a. (HasCallStack, PrimMonad m, Prim a)
   => MutablePrimArray (PrimState m) a
   -> m (PrimArray a)

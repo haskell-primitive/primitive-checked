@@ -31,7 +31,7 @@ module Data.Primitive.ByteArray
   , freezeByteArray
   , thawByteArray
   , A.runByteArray
-  , A.unsafeFreezeByteArray
+  , unsafeFreezeByteArray
   , A.unsafeThawByteArray
     -- * Block operations
   , copyByteArray
@@ -91,8 +91,18 @@ newPinnedByteArray n = check "newPinnedByteArray: negative size" (n >= 0) (A.new
 newAlignedPinnedByteArray :: (HasCallStack, PrimMonad m) => Int -> Int -> m (MutableByteArray (PrimState m))
 newAlignedPinnedByteArray n k = check "newAlignedPinnedByteArray: negative size" (n >= 0) (A.newAlignedPinnedByteArray n k)
 
+-- | After a call to 'resizeMutableByteArray', the original reference to
+-- the mutable array should not be used again. This cannot truly be enforced
+-- except by linear types. To attempt to enforce this, we always make a
+-- copy of the mutable primitive array and intentionally corrupt the original
+-- of the original one. The strategy used here to corrupt the array is
+-- simply to write @0xFF@ to every byte.
 resizeMutableByteArray :: PrimMonad m => MutableByteArray (PrimState m) -> Int -> m (MutableByteArray (PrimState m))
-resizeMutableByteArray a n = check "resizeMutableByteArray: negative size" (n >= 0) (A.resizeMutableByteArray a n)
+resizeMutableByteArray marr n = check "resizeMutableByteArray: negative size" (n >= 0) $ do
+  let sz = A.sizeofMutableByteArray marr
+  marr' <- A.cloneMutableByteArray marr 0 sz
+  A.fillByteArray marr 0 sz 0xFF
+  return marr'
 
 shrinkMutableByteArray :: (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m)
@@ -155,6 +165,17 @@ thawByteArray
 thawByteArray arr s l = check "thawByteArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofByteArray arr)
   (A.thawByteArray arr s l)
+
+-- | This corrupts the contents of the argument array by writing @0xFF@ to every byte.
+unsafeFreezeByteArray
+  :: (HasCallStack, PrimMonad m)
+  => MutableByteArray (PrimState m)
+  -> m ByteArray
+unsafeFreezeByteArray marr = do
+  let sz = A.sizeofMutableByteArray marr
+  arr <- A.freezeByteArray marr 0 sz
+  A.fillByteArray marr 0 sz 0xFF
+  return arr
 
 copyByteArray :: forall m. (HasCallStack, PrimMonad m)
   => MutableByteArray (PrimState m) -- ^ destination array

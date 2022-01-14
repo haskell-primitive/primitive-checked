@@ -21,6 +21,7 @@ module Data.Primitive.PrimArray
     -- * Freezing and Thawing
   , freezePrimArray
   , thawPrimArray
+  , A.runPrimArray
   , unsafeFreezePrimArray
   , A.unsafeThawPrimArray
     -- * Block Operations
@@ -54,6 +55,7 @@ module Data.Primitive.PrimArray
   , A.traversePrimArray_
   , A.itraversePrimArray_
     -- * Map/Create
+  , A.emptyPrimArray
   , A.mapPrimArray
   , A.imapPrimArray
   , A.generatePrimArray

@@ -2,6 +2,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UnboxedTuples #-}
 
 module Data.Primitive.SmallArray
@@ -20,13 +21,15 @@ module Data.Primitive.SmallArray
   , freezeSmallArray
   , unsafeFreezeSmallArray
   , thawSmallArray
-  , A.runSmallArray
   , A.unsafeThawSmallArray
+  , A.runSmallArray
+  , createSmallArray
   , A.sizeofSmallArray
   , A.sizeofSmallMutableArray
 #if MIN_VERSION_base(4,14,0)
   , shrinkSmallMutableArray
 #endif
+  , A.emptySmallArray
   , A.smallArrayFromList
   , A.smallArrayFromListN
   , A.mapSmallArray'
@@ -38,6 +41,7 @@ import "primitive" Data.Primitive.SmallArray (SmallArray, SmallMutableArray)
 
 import Control.Exception (throw, ArrayException(..), Exception, toException)
 import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.ST (ST)
 import GHC.Exts (raise#)
 import GHC.Stack
 
@@ -148,6 +152,15 @@ thawSmallArray
 thawSmallArray arr s l = check "thawSmallArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofSmallArray arr)
   (A.thawSmallArray arr s l)
+
+createSmallArray
+  :: Int
+  -> a
+  -> (forall s. SmallMutableArray s a -> ST s ())
+  -> SmallArray a
+createSmallArray n x f = check "createSmallArray: negative size"
+  (n >= 0)
+  (A.createSmallArray n x f)
 
 copySmallArray :: (HasCallStack, PrimMonad m)
   => SmallMutableArray (PrimState m) a -- ^ destination array

@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PackageImports #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE UnboxedTuples #-}
 
 module Data.Primitive.Array
@@ -15,6 +16,7 @@ module Data.Primitive.Array
   , freezeArray
   , thawArray
   , A.runArray
+  , createArray
   , unsafeFreezeArray
   , A.unsafeThawArray
   , A.sameMutableArray
@@ -24,6 +26,7 @@ module Data.Primitive.Array
   , cloneMutableArray
   , A.sizeofArray
   , A.sizeofMutableArray
+  , A.emptyArray
   , A.fromListN
   , A.fromList
   , A.arrayFromListN
@@ -32,8 +35,9 @@ module Data.Primitive.Array
   , A.traverseArrayP
   ) where
 
-import Control.Monad.Primitive (PrimMonad, PrimState)
 import Control.Exception (throw, ArrayException(..), Exception, toException)
+import Control.Monad.Primitive (PrimMonad, PrimState)
+import Control.Monad.ST (ST)
 import qualified Data.List as L
 import "primitive" Data.Primitive.Array (Array, MutableArray)
 import qualified "primitive" Data.Primitive.Array as A
@@ -118,6 +122,15 @@ thawArray
 thawArray arr s l = check "thawArray: index range of out bounds"
   (s >= 0 && l >= 0 && s + l <= A.sizeofArray arr)
   (A.thawArray arr s l)
+
+createArray
+  :: Int
+  -> a
+  -> (forall s. MutableArray s a -> ST s ())
+  -> Array a
+createArray n x f = check "createArray: negative size"
+  (n >= 0)
+  (A.createArray n x f)
 
 copyArray
   :: (HasCallStack, PrimMonad m)

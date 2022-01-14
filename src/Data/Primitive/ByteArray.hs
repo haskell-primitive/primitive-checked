@@ -20,6 +20,7 @@ module Data.Primitive.ByteArray
   , writeByteArray
   , indexByteArray
     -- * Constructing
+  , A.emptyByteArray
   , A.byteArrayFromList
   , A.byteArrayFromListN
     -- * Folding
@@ -29,6 +30,7 @@ module Data.Primitive.ByteArray
     -- * Freezing and thawing
   , freezeByteArray
   , thawByteArray
+  , A.runByteArray
   , A.unsafeFreezeByteArray
   , A.unsafeThawByteArray
     -- * Block operations

@@ -30,6 +30,7 @@ description:
   can be added to the API with only a bump to the fourth number.
 
 extra-source-files:
+  CHANGELOG.md
   README.md
 
 source-repository head

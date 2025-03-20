@@ -27,8 +27,8 @@ module Data.Primitive.Array
   , A.sizeofArray
   , A.sizeofMutableArray
   , A.emptyArray
-  , A.fromListN
-  , A.fromList
+  , G.fromListN
+  , G.fromList
   , A.arrayFromListN
   , A.arrayFromList
   , A.mapArray'
@@ -42,6 +42,7 @@ import qualified Data.List as L
 import "primitive" Data.Primitive.Array (Array, MutableArray)
 import qualified "primitive" Data.Primitive.Array as A
 import GHC.Exts (raise#)
+import GHC.IsList as G (fromListN, fromList)
 import GHC.Stack
 
 check :: HasCallStack => String -> Bool -> a -> a
